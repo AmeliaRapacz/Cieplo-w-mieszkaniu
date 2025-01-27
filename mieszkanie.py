@@ -1,4 +1,4 @@
-from elemnty_mieszkania import Door, Window, Room, Heater
+from elementy_mieszkania import Door, Window, Room, Heater
 import matplotlib.pyplot as plt
 import numpy as np
 from dane import hx,ht
