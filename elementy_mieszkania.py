@@ -53,15 +53,25 @@ class Window:
     def outside_temperature(self, t):
         self.room.u[t, self.cords] = self.outside_temperature_values[t]
 
-
 class Heater:
-    def __init__(self, room, cords, max_temperature, power=radiators_power): 
+    def __init__(self, room, cords, knobs, power=radiators_power): 
         self.room = room
         self.cords = cords
         self.power = power
         self.time_work = 0
-        self.max_temperature = max_temperature
-    #grzanie zgodnie ze wzorem f (poczatek kodu)
+        
+        self.knobs_temperature = [273.15, 280.15, 285.15, 288.15, 292.15, 296.15, 301.15]  
+        self.knobs =  knobs if knobs in range(len(self.knobs_temperature)) else 5
+        self.max_temperature = self.knobs_temperature[self.knobs] 
+        
+    def termostats(self, new_mode):
+        if new_mode in range(7):  
+            self.knobs = new_mode 
+            self.max_temperature = self.knobs_temperature[self.knobs]  
+
+    def get_max_temperature(self):
+        return self.knobs_temperature[self.knobs]
+    
     def heating(self, t, ro = density, hx = hx, ht = ht, cw = specific_heat): 
         radiator_area = len(self.cords)*hx**2
 
@@ -69,7 +79,6 @@ class Heater:
 
         self.time_work += 1
         
-    
     def used_energy(self, ro = density, hx = hx, ht = ht, cw = specific_heat): 
         radiator_area = len(self.cords)*hx**2
         return(self.time_work*f(self.power, ro, radiator_area, cw))*radiator_area
