@@ -1,51 +1,50 @@
 from elementy_mieszkania import Door, Window, Room, Heater
 import matplotlib.pyplot as plt
 import numpy as np
-from dane import hx,ht
+from dane import hx, ht
 from funkcje import f
 
-
 class House:
-    def __init__(self, initial_temperature, outside_temperature, max_temperature, times):
-
+    def __init__(self, initial_temperature, outside_temperature, times, knobs):
         self.initial_temperature = initial_temperature
         self.times = times
         self.outside_temperature = outside_temperature
 
-
-        room1 = Room(21, 9, times, initial_temperature) # lewy górny okk
-        room2 = Room(13, 11, times, initial_temperature) #lewy dolny
-        room3 = Room(11, 9, times, initial_temperature) #prawy górny
-        room4 = Room(19, 11, times, initial_temperature) #prawy dolny
-
+        
+        room1 = Room(21, 9, times, initial_temperature)  # Lewy górny
+        room2 = Room(13, 11, times, initial_temperature) # Lewy dolny
+        room3 = Room(11, 9, times, initial_temperature)  # Prawy górny
+        room4 = Room(19, 11, times, initial_temperature) # Prawy dolny
 
         self.rooms = [room1, room2, room3, room4]
 
-        window1=Window(room1, [2,3,4,5], outside_temperature)
-        window2=Window(room2, [134,135],  outside_temperature)
-        window3=Window(room2, [78,91],  outside_temperature)
-        window4=Window(room3, [32,43,54,65],  outside_temperature)
-        window5=Window(room4, [112,131],  outside_temperature)
-        window6=Window(room4, [197,198,199,200],  outside_temperature)
+        
+        self.windows = [
+            Window(room1, [2,3,4,5], outside_temperature),
+            Window(room2, [134,135], outside_temperature),
+            Window(room2, [78,91], outside_temperature),
+            Window(room3, [32,43,54,65], outside_temperature),
+            Window(room4, [112,131], outside_temperature),
+            Window(room4, [197,198,199,200], outside_temperature)
+        ]
 
-        self.windows = [window1, window2, window3, window4,window5, window6]
+        # Definicja grzejników (usunięto `base_max_temperature`)
+        self.heaters = [
+            Heater(room1, [34, 35], knobs),
+            Heater(room2, [121,122], knobs),
+            Heater(room2, [53,66], knobs),
+            Heater(room3, [53,64], knobs),
+            Heater(room4, [112,131,169, 188], knobs),
+            Heater(room4, [178,179], knobs)
+        ]
 
-        heater1=Heater(room1, [34, 35], max_temperature)
-        heater2=Heater(room2, [121,122], max_temperature)
-        heater3=Heater(room2, [53,66], max_temperature)
-        heater4=Heater(room3, [53,64], max_temperature)
-        heater5=Heater(room4, [112,131,169, 188], max_temperature)
-        heater6=Heater(room4, [178,179], max_temperature)
-
-        self.heaters = [heater1, heater2, heater3, heater4, heater5, heater6]
-
-        door1=Door(room1,[171,172], room2,[3,4])
-        door2=Door(room1,[104,125], room3,[44,45])
-        door3=Door(room1,[184,185], room4,[3,4])
-
-        self.doors = [door1, door2, door3]
+        
+        self.doors = [
+            Door(room1, [171,172], room2, [3,4]),
+            Door(room1, [104,125], room3, [44,45]),
+            Door(room1, [184,185], room4, [3,4])
+        ]
     
-
     def create_house_matrix(self, t):
         house_matrix = np.zeros((self.rooms[0].M + self.rooms[1].M, self.rooms[0].N + self.rooms[2].N))
 
@@ -62,39 +61,53 @@ class House:
         return house_matrix
     
     def main(self):
-        # Wykorzystana energia, potrzebne później!
         used_all_energy = []
-        for t in np.arange(1, self.times):   
+        time_in_hours = 0
+
+        for t in np.arange(1, self.times):
+            # Aktualizacja temperatur w pokojach
             for room in self.rooms:
                 room.step(t)
 
+            # Aktualizacja temperatur w oknach
             for window in self.windows:
                 window.outside_temperature(t)
 
             used_all_energy_at_time = []
             for heater in self.heaters:
-                if heater.room.average_temperature(t) < heater.max_temperature:
+                if heater.room.average_temperature(t) < heater.get_max_temperature():
                     heater.heating(t)
+
                 used_all_energy_at_time.append(heater.used_energy())
             used_all_energy.append(np.sum(used_all_energy_at_time))
+
             
             for door in self.doors:
                 door.door_temperature(t)
-            
-            # Rysowanie rozkładu temperatury w domu
-            if t % 7200 == 0 or t == self.times - 1:  # Co 7200 kroków lub na końcu
+
+            time_in_hours = t * ht / 3600
+
+            if t % 900 == 0 and t <= 7200:  
                 house_matrix = self.create_house_matrix(t)
                 plt.figure(figsize=(8, 6))
-                plt.imshow(house_matrix, cmap="plasma")
-                plt.colorbar(label='Temperature')
-                plt.title(f"Temperatura o godzinie: {t/(60*60*2)-1}")
+                im = plt.imshow(house_matrix, cmap="plasma", vmin=275.15, vmax=300.15)
+                cbar = plt.colorbar(im, label='Temperature (°C / K)')
+
+                def kelvin_to_celsius(kelvin):
+                    return kelvin - 273.15
+
+                # Ustawienie podziałek na kolorowej belce (Kelwiny i Celsjusze)
+                tick_values = np.linspace(275.15, 300.15, 6)  # 6 równych podziałek
+                cbar.set_ticks(tick_values)
+                cbar.set_ticklabels([f"{kelvin_to_celsius(k):.1f}°C / {k:.1f}K" for k in tick_values])
+                plt.title(f"Temperatura po {int(t/(900))}/8 godziny grzania")
                 plt.show()
-                plt.savefig(f"temperature_o_godzinie{t/(60*60*2)-1}.png") 
+                plt.savefig(f"temperature_po_godzinie{t/(900)}_grzania.png") 
                 plt.close()
                     
         # Wykres zużycia energii
         plt.figure(figsize=(10, 6))
-        time_in_hours = np.arange(len(used_all_energy)) * ht / 3600  # Przeliczenie czasu na godziny
+        time_in_hours = np.arange(len(used_all_energy)) * ht / 3600  
         plt.plot(time_in_hours, used_all_energy, label="Zużycie energii", color="blue")
         plt.xlabel("Czas [godziny]")
         plt.ylabel("Zużycie energii [J]")
@@ -103,4 +116,4 @@ class House:
         plt.legend()
         plt.ylim(min(used_all_energy) * 0.9, max(used_all_energy) * 1.1)
         plt.show()
-    
+        print(used_all_energy[-1])
