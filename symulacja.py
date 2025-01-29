@@ -3,9 +3,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 from dane import outside_temperature_a, outside_temperature_b, outside_temperature_c
 
+initial_temperature = outside_temperature_a[0]
 
-initial_temperature = 273.15 + 10
-max_temperature= 273.15 + 26 
 
-domek=House(initial_temperature, outside_temperature_a, max_temperature, len(outside_temperature_a)) 
+knobs = 5  
+domek = House(initial_temperature, outside_temperature_a, len(outside_temperature_a), knobs)
 domek.main()
