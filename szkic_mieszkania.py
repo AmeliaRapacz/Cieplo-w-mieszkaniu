@@ -41,6 +41,7 @@ def szkic_mieszkania(kolumny, wiersze):
         (i,1) for  i in range (13,15)] + [
         (i, 30) for i in range(4,6)] + [
         (i, 30) for i in range(14,16)] + [
+        (i,14) for  i in range (13,15)] + [
         ]
 
     for x, y in lokalizacja_kaloryfery:
@@ -88,6 +89,5 @@ ax.set_aspect('equal')
 
 
 plt.show()
-plt.savefig(f"szkic_mieszkania.png")  
+plt.savefig(f"szkic_mieszkania_1.png")  
 plt.close()
-
