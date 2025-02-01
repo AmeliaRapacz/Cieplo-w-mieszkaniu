@@ -31,9 +31,7 @@ class Room:
         self.walls.extend(self.IB1)
         self.walls.extend(self.IB2)
         self.walls = list(set(self.walls))
-        self.interior = [i for i in range(N * M) if i not in self.walls]
 
-    
     def step(self, t, alpha = alpha): 
         self.u[t, :] = self.u[t - 1, :] + ((alpha*ht)/ hx**2) * np.matmul(self.L, self.u[t - 1, :])
         self.u[t, self.IB1] = self.u[t, self.IB1_sasiad]
@@ -41,9 +39,7 @@ class Room:
         self.u[t, self.IB3] = self.u[t, self.IB3_sasiad]
         self.u[t, self.IB4] = self.u[t, self.IB4_sasiad]
     
-    def average_temperature(self, t):
-        return(np.sum(self.u[t, self.interior]) / ((self.N - 2) * (self.M - 2)))
-        
+    
 class Window:
     def __init__(self, room, cords, outside_temperature_values):
         self.room = room
@@ -54,9 +50,10 @@ class Window:
         self.room.u[t, self.cords] = self.outside_temperature_values[t]
 
 class Heater:
-    def __init__(self, room, cords, knobs, power=radiators_power): 
+    def __init__(self, room, cords,  cords_near_heater, knobs, power=radiators_power): 
         self.room = room
         self.cords = cords
+        self.cords_near_heater = cords_near_heater 
         self.power = power
         self.time_work = 0
         
@@ -74,14 +71,15 @@ class Heater:
     
     def heating(self, t, ro = density, hx = hx, ht = ht, cw = specific_heat): 
         radiator_area = len(self.cords)*hx**2
-
         self.room.u[t, self.cords] = self.room.u[t, self.cords] + ht*f(self.power, ro, radiator_area, cw)
-
         self.time_work += 1
         
     def used_energy(self, ro = density, hx = hx, ht = ht, cw = specific_heat): 
         radiator_area = len(self.cords)*hx**2
         return(self.time_work*f(self.power, ro, radiator_area, cw))*radiator_area
+    
+    def temp_near_heater(self, t):
+        return np.sum(self.room.u[t, self.cords_near_heater]) / len(self.cords_near_heater)
 
 class Door:
     def __init__(self, room_1, cords_1, room_2, cords_2):
@@ -89,7 +87,7 @@ class Door:
         self.cords_1 = cords_1
         self.room_2 = room_2
         self.cords_2 = cords_2
-    #temp w obrebie drzwi jest brana z pokoi, ktore te drzwi lacza i usrednianma
+    
     def door_temperature(self, t):
         door_temperature = []
         door_temperature.append(self.room_1.u[t, self.cords_1])
