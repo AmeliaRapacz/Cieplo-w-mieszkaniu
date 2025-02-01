@@ -1,0 +1,8 @@
+{
+  "constants": {
+    "air density": 1.2,
+    "specific heat": 1005,
+    "radiators power": 1200,
+    "alpha": 0.025
+  }
+}
