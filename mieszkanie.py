@@ -20,24 +20,24 @@ class House:
 
         
         self.windows = [
-            Window(room1, [2,3,4,5], outside_temperature),
+            Window(room1, [2,3], outside_temperature),
+            Window(room1, [13,14], outside_temperature),
             Window(room2, [134,135], outside_temperature),
             Window(room2, [78,91], outside_temperature),
-            Window(room3, [32,43,54,65], outside_temperature),
-            Window(room4, [112,131], outside_temperature),
-            Window(room4, [197,198,199,200], outside_temperature)
+            Window(room3, [54,65], outside_temperature),
+            Window(room4, [113,132], outside_temperature),
+            Window(room4, [197,198], outside_temperature)
         ]
 
-        # Definicja grzejników (usunięto `base_max_temperature`)
         self.heaters = [
-            Heater(room1, [34, 35], knobs),
-            Heater(room2, [121,122], knobs),
-            Heater(room2, [53,66], knobs),
-            Heater(room3, [53,64], knobs),
-            Heater(room4, [112,131,169, 188], knobs),
-            Heater(room4, [178,179], knobs)
+            Heater(room1, [25, 26], [24,45,46,47,48,27], knobs),
+            Heater(room1, [36, 37], [35,56,57,58,59,38],knobs),
+            Heater(room2, [123,124], [122,109,110,111,112,125], knobs),
+            Heater(room2, [53,66], [40,41,54,67,80,79], knobs),
+            Heater(room3, [31,42], [20,19,30,41,52,53], knobs),
+            Heater(room4, [74,93], [55,54,73,92,111,112], knobs),
+            Heater(room4, [180,181], [179,160,161,162,163,182], knobs)
         ]
-
         
         self.doors = [
             Door(room1, [171,172], room2, [3,4]),
@@ -60,22 +60,22 @@ class House:
 
         return house_matrix
     
+    
     def main(self):
         used_all_energy = []
         time_in_hours = 0
 
         for t in np.arange(1, self.times):
-            # Aktualizacja temperatur w pokojach
+
             for room in self.rooms:
                 room.step(t)
 
-            # Aktualizacja temperatur w oknach
             for window in self.windows:
                 window.outside_temperature(t)
 
             used_all_energy_at_time = []
             for heater in self.heaters:
-                if heater.room.average_temperature(t) < heater.get_max_temperature():
+                if heater.temp_near_heater(t)< heater.get_max_temperature():
                     heater.heating(t)
 
                 used_all_energy_at_time.append(heater.used_energy())
@@ -87,7 +87,7 @@ class House:
 
             time_in_hours = t * ht / 3600
 
-            if t % 900 == 0 and t <= 7200:  
+            if t % 900 == 0 and t <= 7200: #tu sobie dobieram intersujące mnie momenty, które chce uwzględnić w raporcie  
                 house_matrix = self.create_house_matrix(t)
                 plt.figure(figsize=(8, 6))
                 im = plt.imshow(house_matrix, cmap="plasma", vmin=275.15, vmax=300.15)
@@ -96,16 +96,15 @@ class House:
                 def kelvin_to_celsius(kelvin):
                     return kelvin - 273.15
 
-                # Ustawienie podziałek na kolorowej belce (Kelwiny i Celsjusze)
-                tick_values = np.linspace(275.15, 300.15, 6)  # 6 równych podziałek
+                tick_values = np.linspace(275.15, 300.15, 6) 
                 cbar.set_ticks(tick_values)
                 cbar.set_ticklabels([f"{kelvin_to_celsius(k):.1f}°C / {k:.1f}K" for k in tick_values])
-                plt.title(f"Temperatura po {int(t/(900))}/8 godziny grzania")
+                plt.title(f"Temperatura po {int(t/(900)*60/8)} minutach ogrzewania")
                 plt.show()
                 plt.savefig(f"temperature_po_godzinie{t/(900)}_grzania.png") 
                 plt.close()
                     
-        # Wykres zużycia energii
+        
         plt.figure(figsize=(10, 6))
         time_in_hours = np.arange(len(used_all_energy)) * ht / 3600  
         plt.plot(time_in_hours, used_all_energy, label="Zużycie energii", color="blue")
@@ -117,3 +116,4 @@ class House:
         plt.ylim(min(used_all_energy) * 0.9, max(used_all_energy) * 1.1)
         plt.show()
         print(used_all_energy[-1])
+
